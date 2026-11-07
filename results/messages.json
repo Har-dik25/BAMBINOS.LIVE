@@ -1,0 +1,202 @@
+[
+  {
+    "invoice_id": 84902,
+    "recipient_type": "parent",
+    "recipient_name": "Ka***k Na***r",
+    "channel": "whatsapp",
+    "reason_code": "STUCK_AT_ALLOCATION",
+    "deadline": "none",
+    "message": "Hi Ka***k Na***r, your renewal payment of ₹10,500 for Di***a Na***r is confirmed. Classes continue in the same batch (Mon,Wed, 18:00) with Mr. Vikram S***. First class: Wed 04 Nov, 18:00. No action needed.",
+    "message_hinglish": "Namaste Ka***k Na***r, Di***a Na***r ke renewal ka ₹10,500 ka payment confirm ho gaya hai. Classes isi batch mein (Mon,Wed, 18:00) Mr. Vikram S*** ke saath chalti rahengi. Pehli class: Wed 04 Nov, 18:00. Aapko kuch karna nahi hai."
+  },
+  {
+    "invoice_id": 84903,
+    "recipient_type": "parent",
+    "recipient_name": "Ne***a Ve***a",
+    "channel": "whatsapp",
+    "reason_code": "AUTO_APPROVED",
+    "deadline": "none",
+    "message": "Hi Ne***a Ve***a, your renewal payment of ₹9,000 for Ka***r Ve***a is confirmed. Classes continue in the same batch (Wed,Fri, 16:30) with Acharya Nancy S***. First class: Wed 04 Nov, 16:30. No action needed.",
+    "message_hinglish": "Namaste Ne***a Ve***a, Ka***r Ve***a ke renewal ka ₹9,000 ka payment confirm ho gaya hai. Classes isi batch mein (Wed,Fri, 16:30) Acharya Nancy S*** ke saath chalti rahengi. Pehli class: Wed 04 Nov, 16:30. Aapko kuch karna nahi hai."
+  },
+  {
+    "invoice_id": 84904,
+    "recipient_type": "parent",
+    "recipient_name": "Su***h Iy***r",
+    "channel": "whatsapp (registered number)",
+    "reason_code": "PAYER_MISMATCH",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Su***h Iy***r, we received a payment of ₹12,000 for An***a Iy***r's renewal (invoice BMB-INV-2026-84904) from a different mobile/email than the one on your account. Please reply YES if this was you or a family member, and we will schedule Tue,Thu 17:00 classes right away. Reply by Wed 04 Nov, 12 PM.",
+    "message_hinglish": "Namaste Su***h Iy***r, An***a Iy***r ke renewal ka ₹12,000 ka payment (invoice BMB-INV-2026-84904) aapke account ke number/email se alag se aaya hai. Agar ye aapne ya parivaar ne kiya hai to YES reply karein, hum Tue,Thu 17:00 ki classes turant schedule kar denge. Kripya Wed 04 Nov, 12 PM tak reply karein."
+  },
+  {
+    "invoice_id": 84904,
+    "recipient_type": "ops_agent",
+    "recipient_name": "Ops exec on duty",
+    "channel": "slack",
+    "reason_code": "PAYER_MISMATCH",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "[SOFT] Invoice BMB-INV-2026-84904: paid by a different person than the registered parent (teacher: 'Mother paid from her number'). IDs match. Waiting for the registered parent's YES on WhatsApp; approve on reply. If none by Wed 04 Nov, 12 PM, call the registered number."
+  },
+  {
+    "invoice_id": 84905,
+    "recipient_type": "parent",
+    "recipient_name": "Me***a Pa***l",
+    "channel": "whatsapp",
+    "reason_code": "FALSE_BATCH_FULL",
+    "deadline": "none",
+    "message": "Hi Me***a Pa***l, your renewal payment of ₹11,000 for Re***h Pa***l is confirmed. Classes continue in the same batch (Sat,Sun, 11:00) with Coach Arvind K***. First class: Sat 07 Nov, 11:00. No action needed.",
+    "message_hinglish": "Namaste Me***a Pa***l, Re***h Pa***l ke renewal ka ₹11,000 ka payment confirm ho gaya hai. Classes isi batch mein (Sat,Sun, 11:00) Coach Arvind K*** ke saath chalti rahengi. Pehli class: Sat 07 Nov, 11:00. Aapko kuch karna nahi hai."
+  },
+  {
+    "invoice_id": 84906,
+    "recipient_type": "parent",
+    "recipient_name": "Fa***n Kh***n",
+    "channel": "whatsapp",
+    "reason_code": "ORPHAN_NO_FORM",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Fa***n Kh***n, we received your renewal payment of ₹18,000 for Zo***a Kh***n (invoice BMB-INV-2026-84906). To schedule the next term, please reply 1 to continue in the same batch (Sun,Tue, 19:00) or 2 to change the batch. Reply by Wed 04 Nov, 12 PM.",
+    "message_hinglish": "Namaste Fa***n Kh***n, Zo***a Kh***n ke renewal ka ₹18,000 ka payment mil gaya hai (invoice BMB-INV-2026-84906). Agle term ki classes schedule karne ke liye reply karein: 1 = isi batch mein continue (Sun,Tue, 19:00), 2 = batch change. Kripya Wed 04 Nov, 12 PM tak reply karein."
+  },
+  {
+    "invoice_id": 84906,
+    "recipient_type": "teacher",
+    "recipient_name": "Ms. Rhea B***",
+    "channel": "whatsapp",
+    "reason_code": "ORPHAN_NO_FORM",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Ms. Rhea B***, Zo***a Kh***n's renewal payment of ₹18,000 (invoice BMB-INV-2026-84906) is in, but we have no renewal form. You do not need to fill the form - we have asked the parent to confirm the same batch. If they have not replied by Wed 04 Nov, 12 PM, please nudge them."
+  },
+  {
+    "invoice_id": 84907,
+    "recipient_type": "ops_head",
+    "recipient_name": "Head of Operations",
+    "channel": "slack",
+    "reason_code": "DISCOUNT_NEEDS_APPROVAL",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Approval needed - invoice BMB-INV-2026-84907 (Phonics Champions Level 1): standard fee ₹9,500, paid ₹7,600 (20% 'retention scholarship', offered by Ms. Simran D***). Payment is complete. Approve or reject by Wed 04 Nov, 12 PM so Vi***n Jo***i's classes can be scheduled."
+  },
+  {
+    "invoice_id": 84908,
+    "recipient_type": "parent",
+    "recipient_name": "Ro***n Ma***a",
+    "channel": "whatsapp",
+    "reason_code": "DUPLICATE_FORM",
+    "deadline": "none",
+    "message": "Hi Ro***n Ma***a, your renewal payment of ₹22,000 for Si***a Ma***a is confirmed. Classes continue in the same batch (Sat,Sun, 09:30) with Acharya Nancy S***. First class: Sat 07 Nov, 09:30. No action needed.",
+    "message_hinglish": "Namaste Ro***n Ma***a, Si***a Ma***a ke renewal ka ₹22,000 ka payment confirm ho gaya hai. Classes isi batch mein (Sat,Sun, 09:30) Acharya Nancy S*** ke saath chalti rahengi. Pehli class: Sat 07 Nov, 09:30. Aapko kuch karna nahi hai."
+  },
+  {
+    "invoice_id": 84908,
+    "recipient_type": "teacher",
+    "recipient_name": "Acharya Nancy S***",
+    "channel": "slack",
+    "reason_code": "DUPLICATE_FORM",
+    "deadline": "none",
+    "message": "Hi Acharya Nancy S***, you submitted two renewal forms for invoice BMB-INV-2026-84908 (Si***a Ma***a). We kept the first and marked the second as a duplicate. No action needed."
+  },
+  {
+    "invoice_id": 84909,
+    "recipient_type": "parent",
+    "recipient_name": "Sn***a Ku***i",
+    "channel": "whatsapp",
+    "reason_code": "PARTIAL_PAYMENT",
+    "deadline": "{instalment_2_due_date}",
+    "message": "Hi Sn***a Ku***i, we received the first instalment of ₹5,250 for Ad***t Ku***i's renewal (invoice BMB-INV-2026-84909). The second instalment of ₹5,250 is pending - please pay by {instalment_2_due_date} so classes continue without a break.",
+    "message_hinglish": "Namaste Sn***a Ku***i, Ad***t Ku***i ke renewal ki pehli instalment ₹5,250 mil gayi hai (invoice BMB-INV-2026-84909). Dusri instalment ₹5,250 baaki hai - kripya {instalment_2_due_date} tak pay karein taaki classes beech mein na rukein."
+  },
+  {
+    "invoice_id": 84909,
+    "recipient_type": "ops_agent",
+    "recipient_name": "Ops exec / Finance",
+    "channel": "slack",
+    "reason_code": "PARTIAL_PAYMENT, AMOUNT_MISMATCH",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "[BLOCK] Invoice BMB-INV-2026-84909: Installment 1 of 2 - ₹5,250 paid of ₹10,500. Teacher's form claims ₹10,500 paid and 24 sessions. Do not schedule the full term. Decide how many sessions instalment 1 covers, correct the form, and set a reminder for instalment 2."
+  },
+  {
+    "invoice_id": 84910,
+    "recipient_type": "parent",
+    "recipient_name": "Vi***m Re***y",
+    "channel": "whatsapp",
+    "reason_code": "ORPHAN_NO_FORM",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Vi***m Re***y, we received your renewal payment of ₹11,000 for My***a Re***y (invoice BMB-INV-2026-84910). To schedule the next term, please reply 1 to continue in the same batch (Wed,Fri, 17:00) or 2 to change the batch. Reply by Wed 04 Nov, 12 PM.",
+    "message_hinglish": "Namaste Vi***m Re***y, My***a Re***y ke renewal ka ₹11,000 ka payment mil gaya hai (invoice BMB-INV-2026-84910). Agle term ki classes schedule karne ke liye reply karein: 1 = isi batch mein continue (Wed,Fri, 17:00), 2 = batch change. Kripya Wed 04 Nov, 12 PM tak reply karein."
+  },
+  {
+    "invoice_id": 84910,
+    "recipient_type": "teacher",
+    "recipient_name": "Coach Arvind K***",
+    "channel": "whatsapp",
+    "reason_code": "ORPHAN_NO_FORM",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Coach Arvind K***, My***a Re***y's renewal payment of ₹11,000 (invoice BMB-INV-2026-84910) is in, but we have no renewal form. You do not need to fill the form - we have asked the parent to confirm the same batch. If they have not replied by Wed 04 Nov, 12 PM, please nudge them."
+  },
+  {
+    "invoice_id": 84911,
+    "recipient_type": "parent",
+    "recipient_name": "An***i Gu***a",
+    "channel": "whatsapp",
+    "reason_code": "PAYMENT_NOT_CONFIRMED",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi An***i Gu***a, your renewal payment of ₹12,000 for Is***n Gu***a did not complete on our side (invoice BMB-INV-2026-84911). Please retry here: {retry_link}. Classes will be scheduled as soon as the payment is confirmed.",
+    "message_hinglish": "Namaste An***i Gu***a, Is***n Gu***a ke renewal ka ₹12,000 ka payment hamare yahan confirm nahi hua (invoice BMB-INV-2026-84911). Kripya is link se dobara payment karein: {retry_link}. Payment confirm hote hi classes schedule ho jayengi."
+  },
+  {
+    "invoice_id": 84911,
+    "recipient_type": "teacher",
+    "recipient_name": "Ms. Simran D***",
+    "channel": "slack",
+    "reason_code": "PAYMENT_NOT_CONFIRMED",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi Ms. Simran D***, the payment for Is***n Gu***a (invoice BMB-INV-2026-84911) shows as Failed on the gateway. A screenshot cannot be accepted as proof. We have sent the parent a retry link. If the parent says money was debited, please ask for the bank reference."
+  },
+  {
+    "invoice_id": 84911,
+    "recipient_type": "ops_agent",
+    "recipient_name": "Ops exec on duty",
+    "channel": "slack",
+    "reason_code": "PAYMENT_NOT_CONFIRMED",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "[BLOCK] Invoice BMB-INV-2026-84911: gateway status Failed, no payment id. Teacher attached a UPI 'processing' screenshot. Check Razorpay for a late-captured webhook before 12 PM tomorrow; do not schedule until it shows Paid."
+  },
+  {
+    "invoice_id": 84912,
+    "recipient_type": "ops_agent",
+    "recipient_name": "Ops exec / Academics",
+    "channel": "slack",
+    "reason_code": "BATCH_CHANGE_PENDING, NO_MATCHING_BATCH",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "[HUMAN] Invoice BMB-INV-2026-84912: Ta***a Me***n paid ₹9,000; parent wants Sat/Sun 11:00 in Little Yogi Gita Level 1 with Acharya Nancy S***. No such batch exists. Options on file: LY-G3-Batch-B (Wed,Fri 16:30, fee ₹9,000); LY-US-Batch-G (Sat,Sun 09:30, fee ₹22,000). Decide: waitlist, open a new batch, or offer an existing slot. Parent has not been contacted and no reminder is scheduled."
+  },
+  {
+    "invoice_id": 84912,
+    "recipient_type": "parent",
+    "recipient_name": "De***k Me***n",
+    "channel": "whatsapp",
+    "reason_code": "BATCH_CHANGE_PENDING",
+    "deadline": "Wed 04 Nov, 12 PM",
+    "message": "Hi De***k Me***n, thanks for renewing Ta***a Me***n's classes (invoice BMB-INV-2026-84912). The weekend 11 AM slot you asked for is not available right now. Available options: Wed/Fri 4:30 PM (current batch) or we can add Ta***a Me***n to a waitlist for the weekend slot. Please reply 1 or 2 by Wed 04 Nov, 12 PM.",
+    "message_hinglish": "Namaste De***k Me***n, Ta***a Me***n ke renewal ke liye shukriya (invoice BMB-INV-2026-84912). Weekend 11 AM wala slot abhi available nahi hai. Options: 1 = Wed/Fri 4:30 PM (current batch), 2 = weekend slot ki waitlist. Kripya Wed 04 Nov, 12 PM tak 1 ya 2 reply karein."
+  },
+  {
+    "invoice_id": 84913,
+    "recipient_type": "parent",
+    "recipient_name": "Ar***n Me***a",
+    "channel": "whatsapp",
+    "reason_code": "INVOICE_ID_TYPO",
+    "deadline": "none",
+    "message": "Hi Ar***n Me***a, your renewal payment of ₹11,500 for De***a Me***a is confirmed. Classes continue in the same batch (Tue,Thu, 18:00) with Ms. Mary M***. First class: Thu 05 Nov, 18:00. No action needed.",
+    "message_hinglish": "Namaste Ar***n Me***a, De***a Me***a ke renewal ka ₹11,500 ka payment confirm ho gaya hai. Classes isi batch mein (Tue,Thu, 18:00) Ms. Mary M*** ke saath chalti rahengi. Pehli class: Thu 05 Nov, 18:00. Aapko kuch karna nahi hai."
+  },
+  {
+    "invoice_id": 84913,
+    "recipient_type": "teacher",
+    "recipient_name": "Ms. Mary M***",
+    "channel": "slack",
+    "reason_code": "INVOICE_ID_TYPO",
+    "deadline": "none",
+    "message": "Hi Ms. Mary M***, the renewal form for De***a Me***a cited an invoice number that does not exist (digits swapped). We matched it to BMB-INV-2026-84913 automatically. Please double-check the invoice number next time."
+  }
+]

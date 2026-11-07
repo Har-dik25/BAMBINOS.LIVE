@@ -1,0 +1,6 @@
+pandas>=2.0
+# only needed to regenerate the Sheet / figures / report:
+openpyxl
+matplotlib
+reportlab
+pillow

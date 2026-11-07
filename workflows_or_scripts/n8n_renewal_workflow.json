@@ -1,0 +1,648 @@
+{
+  "name": "Bambinos - Renewal payment to scheduled classes (zero-touch + exceptions)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Bambinos renewal automation (template)\n**Trigger A:** payment webhook (Razorpay/Stripe). **Trigger B:** 15-minute reconciliation sweep.\nBoth feed the SAME rules engine (Code node = n8n_rules_engine.js, mirrors reconcile.py and the Google Sheet).\n**Zero-touch** -> create booking + WhatsApp confirmation. **SOFT / HUMAN / BLOCK** -> LLM drafts the message -> one named owner.\nReplace every REPLACE_* value and connect credentials before activating. Run in SHADOW MODE first (log only).",
+        "height": 260,
+        "width": 520
+      },
+      "id": "ba2a080b-6648-5823-990b-b630fcfcc913",
+      "name": "Sticky: how it works",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "renewal-payment-captured",
+        "options": {}
+      },
+      "id": "978d87ab-c24b-5ebc-af50-6231ec7ef0d4",
+      "name": "Payment captured (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        80
+      ],
+      "webhookId": "1289ee72-126d-4cb3-b9f0-b0b0592bf9a0"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "8a826e80-475d-5fee-bd25-9d362a335703",
+      "name": "Every 15 minutes (sweep)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://REPLACE_WITH_CONTEXT_API/context",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "invoice_id",
+              "value": "={{ $json.body.invoice_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "94f13da8-02a9-5366-b2ba-e43902b6f1b7",
+      "name": "Fetch renewal context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -320,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://REPLACE_WITH_CONTEXT_API/sweep",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "min_hours",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3b87c6f4-4e92-5c4b-aad1-46f084b5a1f8",
+      "name": "Fetch stuck / orphan candidates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -320,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "id": "44c547b5-c673-55c7-b066-c12f3fc223ea",
+      "name": "Split candidates",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Bambinos renewal rules engine - for the n8n \"Code\" node (Run Once for All Items).\n// Mirrors reconcile.py and the Checks tab of the Google Sheet. Input items look like:\n// { invoice, forms[], booking|null, schedule_count, reference, batches[] }   (see README for the context API)\nconst CONF = {\"\\u0410\":\"A\",\"\\u0412\":\"B\",\"\\u0415\":\"E\",\"\\u041a\":\"K\",\"\\u041c\":\"M\",\"\\u041d\":\"H\",\"\\u041e\":\"O\",\"\\u0420\":\"P\",\"\\u0421\":\"C\",\"\\u0422\":\"T\",\"\\u0425\":\"X\",\"\\u0430\":\"a\",\"\\u0435\":\"e\",\"\\u043e\":\"o\",\"\\u0440\":\"p\",\"\\u0441\":\"c\",\"\\u0443\":\"y\",\"\\u0445\":\"x\"};\nconst skel = s => (s || \"\").normalize(\"NFKC\").split(\"\").map(c => CONF[c] || c).join(\"\").toLowerCase().trim();\nconst META = {\n  PAYMENT_NOT_CONFIRMED: [\"BLOCK\", \"Parent, then Ops exec\"], PARTIAL_PAYMENT: [\"BLOCK\", \"Ops exec / Finance\"],\n  AMOUNT_MISMATCH: [\"HUMAN\", \"Ops exec\"], ID_MISMATCH: [\"HUMAN\", \"Ops exec\"],\n  DISCOUNT_NEEDS_APPROVAL: [\"HUMAN\", \"Ops lead / Head of Ops\"], NO_MATCHING_BATCH: [\"HUMAN\", \"Ops exec / Academics\"],\n  BATCH_CHANGE_PENDING: [\"HUMAN\", \"Parent + Ops exec\"], BATCH_FULL: [\"HUMAN\", \"Ops exec / Academics\"],\n  ORPHAN_NO_FORM: [\"SOFT\", \"Parent (confirm) + Teacher (notify)\"], PAYER_MISMATCH: [\"SOFT\", \"Parent (registered number) + Ops exec\"],\n  DUPLICATE_FORM: [\"AUTO_FIX\", \"Automation\"], INVOICE_ID_TYPO: [\"AUTO_FIX\", \"Automation\"], HOMOGLYPH_MISMATCH: [\"AUTO_FIX\", \"Automation\"],\n  STUCK_AT_ALLOCATION: [\"AUTO_FIX\", \"Automation\"], FALSE_BATCH_FULL: [\"AUTO_FIX\", \"Automation\"],\n  SESSIONS_UNDER_SCHEDULED: [\"INFO\", \"Ops exec (info)\"],\n};\nconst RANK = { INFO: 0, AUTO_FIX: 2, SOFT: 3, HUMAN: 4, BLOCK: 5 };\n\nfunction decide(ctx) {\n  const inv = ctx.invoice, ref = ctx.reference || {};\n  const forms = [...(ctx.forms || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));\n  const form = forms[0] || null;                       // earliest form wins (idempotency)\n  const bk = ctx.booking || null;\n  const sched = Number(ctx.schedule_count || 0);\n  const codes = [];\n\n  if (inv.payment_status === \"Failed\") codes.push(\"PAYMENT_NOT_CONFIRMED\");          // gateway is the only truth\n  if (inv.payment_status === \"Partially_Paid\") codes.push(\"PARTIAL_PAYMENT\");\n  if (!form && inv.payment_status === \"Paid\" && sched === 0 && !bk) codes.push(\"ORPHAN_NO_FORM\");\n  if (form) {\n    if (forms.length > 1) codes.push(\"DUPLICATE_FORM\");\n    if (Number(form.cited_invoice_id) !== Number(inv.id)) codes.push(\"INVOICE_ID_TYPO\");\n    if (Math.abs(Number(form.amount_paid) - Number(inv.net_amount)) > 0.5) codes.push(\"AMOUNT_MISMATCH\");\n    if ([\"user_id\", \"student_id\", \"class_id\", \"educator_id\"].some(k => Number(form[k]) !== Number(inv[k]))) codes.push(\"ID_MISMATCH\");\n  }\n  if (Number(inv.discount_amount) > 0) codes.push(\"DISCOUNT_NEEDS_APPROVAL\");\n  if (ref.student_id) {\n    const mobOk = inv.mobile === ref.registered_mobile_masked, mailOk = inv.email === ref.registered_email_masked;\n    const nameRaw = inv.parent_name === ref.parent_name_masked, nameSk = skel(inv.parent_name) === skel(ref.parent_name_masked);\n    if (!mobOk || !mailOk || !nameSk) codes.push(\"PAYER_MISMATCH\");\n    else if (!nameRaw) codes.push(\"HOMOGLYPH_MISMATCH\");\n  }\n  const batchId = form ? Number(form.current_classbatch_id) : Number(ref.current_classbatch_id);\n  const ownSeat = Number(ref.current_classbatch_id) === batchId;\n  if (bk) {\n    if (bk.request_status === \"Pending_Batch_Allocation\") codes.push(\"STUCK_AT_ALLOCATION\");\n    else if (bk.request_status === \"Failed_Batch_Full\") codes.push(ownSeat ? \"FALSE_BATCH_FULL\" : \"BATCH_FULL\");\n    else if (bk.request_status === \"Awaiting_Parent_Batch_Selection\") codes.push(\"BATCH_CHANGE_PENDING\");\n  }\n  if (form && form.continue_same_batch === \"No\" && ref.student_id) {\n    // match on category + educator + days + time + free seat (never days/time alone)\n    const hit = (ctx.batches || []).filter(b => Number(b.category_id) === Number(ref.category_id)\n      && Number(b.educator_id) === Number(ref.educator_id) && b.batch_days === form.preferred_days\n      && b.batch_start_time === form.preferred_time_slot && Number(b.active_students_count) < Number(b.max_batch_size));\n    if (!hit.length) codes.push(\"NO_MATCHING_BATCH\");\n  }\n  const sessions = form ? Number(form.sessions_purchased) : 24;\n  if (sched > 0 && sched < sessions) codes.push(\"SESSIONS_UNDER_SCHEDULED\");\n\n  let outcome;\n  if (sched > 0) outcome = \"ALREADY_SCHEDULED\";\n  else if (!codes.length) outcome = \"AUTO_APPROVE\";\n  else outcome = codes.map(c => META[c][0]).reduce((a, b) => (RANK[b] > RANK[a] ? b : a), \"INFO\");\n  if (outcome === \"INFO\") outcome = \"AUTO_APPROVE\";\n  const owners = [...new Set(codes.filter(c => META[c][0] !== \"INFO\" || sched > 0).map(c => META[c][1]))];\n  return {\n    invoice_id: inv.id, student_id: inv.student_id, outcome, reason_codes: codes,\n    owner: outcome === \"AUTO_APPROVE\" ? \"Automation\" : owners.join(\" | \"),\n    classbatch_id: batchId, sessions, hours_since_payment: inv.paid_at ? Math.round((Date.now() - new Date(inv.paid_at)) / 36e5 * 10) / 10 : null,\n  };\n}\n\n// n8n entry point\nif (typeof $input !== \"undefined\") {\n  return $input.all().map(i => ({ json: decide(i.json) }));\n}\n// (outside n8n) module.exports used by the test harness\nif (typeof module !== \"undefined\") module.exports = { decide };\n"
+      },
+      "id": "0613cba4-9219-52ef-9100-f11946ca52f4",
+      "name": "Rules engine (12 checks)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "01cd2693-e64d-5b5b-acbd-123b5d6465b4",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "AUTO_APPROVE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "5063ed75-e3bc-5b19-a7e2-463ccc84ac92",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "AUTO_FIX",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Zero-touch"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "c67558a9-b7c2-5288-9b2c-23d976e74a7a",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "SOFT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Soft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "706b6720-f34b-592a-9609-ad80fd828b18",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "HUMAN",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Human"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "200eb5f0-45b5-5fe6-9cd7-7686f36fc5d6",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "BLOCK",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Block"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "620bec5f-84f7-5cc0-bb61-ea123e7e8e99",
+      "name": "Route by outcome",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        160,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "AutoApproved"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "1fd5ee24-dbc6-5dcb-a0d8-47ebe2737e8d",
+      "name": "Create booking + schedule rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/REPLACE_PHONE_NUMBER_ID/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WHATSAPP_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({messaging_product:'whatsapp', to:'REPLACE_PARENT_NUMBER', type:'template', template:{name:'renewal_confirmed', language:{code:'en'}}}) }}",
+        "options": {}
+      },
+      "id": "822fc04e-c704-5c1a-89a4-9e218c1c46bc",
+      "name": "WhatsApp: confirm to parent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "REPLACE_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:'claude-sonnet-5-5', max_tokens:600, temperature:0, system:'REPLACE with the system prompt from prompts/message_drafter.md', messages:[{role:'user', content: JSON.stringify({recipient_type:'parent', reason_code:$json.reason_codes, evidence:$json})}]}) }}",
+        "options": {}
+      },
+      "id": "837f4458-1c40-5b18-9cff-58cf3eac11b9",
+      "name": "Draft message (LLM)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const t = $json.content?.[0]?.text || '{}';\nlet m; try { m = JSON.parse(t); } catch (e) { m = {recipient:'Ops exec on duty', channel:'slack', message:'Could not parse draft: ' + t}; }\nreturn { json: { ...m, invoice_id: $('Rules engine (12 checks)').item.json.invoice_id, owner: $('Rules engine (12 checks)').item.json.owner, sla_hours: 24 } };"
+      },
+      "id": "18fca24b-16f1-52d2-9518-27d907ff32e1",
+      "name": "Parse drafted message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "7e118b6b-ceea-5279-9e3c-020cddd5cace",
+              "leftValue": "={{ $json.channel }}",
+              "rightValue": "slack",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2903a67f-f999-5e71-89ff-7c9db79434af",
+      "name": "Slack or WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#ops-renewals"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "id": "a3772958-8775-5301-ba4a-5982ebddd0b2",
+      "name": "Slack: alert the owner",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1220,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/REPLACE_PHONE_NUMBER_ID/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WHATSAPP_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({messaging_product:'whatsapp', to:'REPLACE_NUMBER', type:'text', text:{body:$json.message}}) }}",
+        "options": {}
+      },
+      "id": "090aecf8-7642-5716-8cd1-bb0903c7e668",
+      "name": "WhatsApp: parent / teacher",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Exception log"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "31a4883a-2d9c-5e5a-b53d-21ade519ac3a",
+      "name": "Log exception + start SLA timer",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1480,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Payment captured (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Fetch renewal context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch renewal context": {
+      "main": [
+        [
+          {
+            "node": "Rules engine (12 checks)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 15 minutes (sweep)": {
+      "main": [
+        [
+          {
+            "node": "Fetch stuck / orphan candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch stuck / orphan candidates": {
+      "main": [
+        [
+          {
+            "node": "Split candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split candidates": {
+      "main": [
+        [
+          {
+            "node": "Rules engine (12 checks)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rules engine (12 checks)": {
+      "main": [
+        [
+          {
+            "node": "Route by outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by outcome": {
+      "main": [
+        [
+          {
+            "node": "Create booking + schedule rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft message (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft message (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft message (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create booking + schedule rows": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: confirm to parent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft message (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Parse drafted message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse drafted message": {
+      "main": [
+        [
+          {
+            "node": "Slack or WhatsApp?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack or WhatsApp?": {
+      "main": [
+        [
+          {
+            "node": "Slack: alert the owner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp: parent / teacher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: alert the owner": {
+      "main": [
+        [
+          {
+            "node": "Log exception + start SLA timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp: parent / teacher": {
+      "main": [
+        [
+          {
+            "node": "Log exception + start SLA timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
